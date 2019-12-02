@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">Winrate Tracker</string>
+    <string name="action_settings">Settings</string>
+    <string name="win">Won</string>
+    <string name="loss">Lost</string>
+    <string name="set_values_label">Set values manually</string>
+</resources>

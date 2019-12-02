@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="WinLossBatchRenderer">
+        <attr name="name" format="string"/>
+        <attr name="dateCreated" format="string"/>
+        <attr name="wins" format="integer"/>
+        <attr name="losses" format="integer"/>
+    </declare-styleable>
+</resources>
