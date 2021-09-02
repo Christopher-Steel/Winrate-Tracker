@@ -1,6 +1,8 @@
 package com.dontpunchmugs.winratetracker
 
+import android.app.Activity
 import android.content.Context
+import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import android.view.Menu
@@ -57,6 +59,10 @@ class MainActivity : AppCompatActivity() {
                 createBatch()
                 true
             }
+            R.id.action_delete_everything -> {
+                confirmDeleteEverything()
+                true
+            }
             else -> super.onOptionsItemSelected(item)
         }
     }
@@ -96,6 +102,18 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun wipeSaveFileContents() {
+        saveToFile(batchListPath, gson.toJson(emptyList<String>()))
+    }
+
+    private fun deleteAllSavedBatches() {
+        val batchIds = loadBatchList()
+        batchIds.forEach {
+            val batch = WinLossBatch(uuid=UUID.fromString(it))
+            deleteFile(batch.getFilePath())
+        }
+    }
+
     private fun addBatchToList(batch: WinLossBatch, atTop: Boolean = false): WinLossBatchRenderer {
         val batchListView: LinearLayout = findViewById(R.id.batchList)
         val batchRenderer = WinLossBatchRenderer(applicationContext, batch)
@@ -105,5 +123,24 @@ class MainActivity : AppCompatActivity() {
             batchListView.addView(batchRenderer)
         }
         return batchRenderer
+    }
+
+    private fun clearList() {
+        val batchListView: LinearLayout = findViewById(R.id.batchList)
+        batchListView.removeAllViews()
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        if (resultCode == Activity.RESULT_OK && requestCode == 0) {
+            // delete everything
+            clearList()
+            deleteAllSavedBatches()
+            wipeSaveFileContents()
+        }
+    }
+
+    private fun confirmDeleteEverything() {
+        val intent = Intent(this, PopUpWindow::class.java)
+        startActivityForResult(intent, 0)
     }
 }

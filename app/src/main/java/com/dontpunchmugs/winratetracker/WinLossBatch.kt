@@ -47,7 +47,7 @@ class WinLossBatch (
         losses = data.losses
     }
 
-    private fun getFilePath(): String {
+    fun getFilePath(): String {
         return "${uuid.toString()}.json"
     }
 
