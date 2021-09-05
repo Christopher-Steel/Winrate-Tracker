@@ -11,7 +11,8 @@
         android:roundIcon="@mipmap/ic_company_logo_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".PopUpWindow"></activity>
+        <activity android:name=".EditBatch"></activity>
+        <activity android:name=".PopUpWindow" />
         <activity
             android:name=".SplashScreen"
             android:label="@string/app_name"
@@ -25,7 +26,7 @@
         <activity
             android:name=".MainActivity"
             android:label="@string/app_name"
-            android:theme="@style/AppTheme.NoActionBar"></activity>
+            android:theme="@style/AppTheme.NoActionBar" />
     </application>
 
 </manifest>

@@ -18,6 +18,7 @@ import java.util.*
 
 class MainActivity : AppCompatActivity() {
     private val batchListPath = "batch_list.json"
+    private val batches = mutableMapOf<UUID, WinLossBatchRenderer>()
 
     private val gson: Gson = GsonBuilder()
         .setDateFormat("dd/MM/yyyy")
@@ -30,6 +31,7 @@ class MainActivity : AppCompatActivity() {
         setSupportActionBar(toolbar)
         saver = ::saveToFile
         loader = ::loadFromFile
+        editModeEnabler = ::editBatch
         renderBatchList(loadBatchList())
     }
 
@@ -67,14 +69,14 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun loadBatchList(): List<String> {
+    private fun loadBatchList(): MutableList<String> {
         val fileText: String =
             try {
                 loadFromFile(batchListPath)
             } catch (e: FileNotFoundException) {
                 "[]"
             }
-        return gson.fromJson(fileText, Array<String>::class.java).toList()
+        return gson.fromJson(fileText, Array<String>::class.java).toMutableList()
     }
 
     private fun renderBatchList(batchIds: List<String>) {
@@ -92,7 +94,14 @@ class MainActivity : AppCompatActivity() {
         if (batch.uuid != null) {
             addBatchToSaveFile(batch.uuid!!)
         }
-        renderer.enterEditingMode()
+        editBatch(renderer)
+    }
+
+    private fun deleteBatch(uuid: UUID) {
+        val batch = WinLossBatch(uuid = uuid)
+        batch.load()
+        removeBatchFromSaveFile(uuid)
+        deleteFile(batch.getFilePath())
     }
 
     private fun addBatchToSaveFile(uuid: UUID) {
@@ -100,6 +109,12 @@ class MainActivity : AppCompatActivity() {
         if (uuid.toString() !in batchIds) {
             saveToFile(batchListPath, gson.toJson(listOf(uuid.toString()) + batchIds))
         }
+    }
+
+    private fun removeBatchFromSaveFile(uuid: UUID) {
+        val batchIds = loadBatchList()
+        batchIds.remove(uuid.toString())
+        saveToFile(batchListPath, gson.toJson(batchIds))
     }
 
     private fun wipeSaveFileContents() {
@@ -116,7 +131,8 @@ class MainActivity : AppCompatActivity() {
 
     private fun addBatchToList(batch: WinLossBatch, atTop: Boolean = false): WinLossBatchRenderer {
         val batchListView: LinearLayout = findViewById(R.id.batchList)
-        val batchRenderer = WinLossBatchRenderer(applicationContext, batch)
+        val batchRenderer = WinLossBatchRenderer(this, batch)
+        batches[batch.uuid!!] = batchRenderer
         if (atTop) {
             batchListView.addView(batchRenderer, 0)
         } else {
@@ -125,9 +141,16 @@ class MainActivity : AppCompatActivity() {
         return batchRenderer
     }
 
+    private fun removeBatchFromList(batchRenderer: WinLossBatchRenderer) {
+        val batchListView: LinearLayout = findViewById(R.id.batchList)
+        batchListView.removeView(batchRenderer)
+        batches.remove(batchRenderer.batch.uuid)
+    }
+
     private fun clearList() {
         val batchListView: LinearLayout = findViewById(R.id.batchList)
         batchListView.removeAllViews()
+        batches.clear()
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -137,6 +160,25 @@ class MainActivity : AppCompatActivity() {
             deleteAllSavedBatches()
             wipeSaveFileContents()
         }
+        if (requestCode == 1 && resultCode != Activity.RESULT_CANCELED && data != null) {
+            val uuid = UUID.fromString(data?.getStringExtra("uuid"))
+            val batchRenderer = batches[uuid]
+            if (batchRenderer != null) {
+                if (resultCode == 42) { // Assuming 42 isn't used already to mean anything, to us it means delete
+                    removeBatchFromList(batchRenderer!!)
+                    deleteBatch(uuid)
+                } else {
+                    batchRenderer.batch.load()
+                    batchRenderer.render()
+                }
+            }
+        }
+    }
+
+    fun editBatch(renderer: WinLossBatchRenderer) {
+        val intent = Intent(this, EditBatch::class.java)
+        intent.putExtra("uuid", renderer.batch.uuid.toString())
+        startActivityForResult(intent, 1)
     }
 
     private fun confirmDeleteEverything() {
